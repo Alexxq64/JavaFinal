@@ -57,17 +57,24 @@ public class DatabaseManager {
         }
     }
 
-    public void takeMoney(int userId, double amount) {
+    public int takeMoney(int userId, double amount) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement("UPDATE users SET balance = balance - ? WHERE user_id = ? AND balance >= ?")) {
             statement.setDouble(1, amount);
             statement.setInt(2, userId);
             statement.setDouble(3, amount);
-            statement.executeUpdate();
+            int rowsAffected = statement.executeUpdate();
+            if (rowsAffected > 0) {
+                return 1; // Успешно
+            } else {
+                return 0; // Недостаточно средств
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        return -1; // Ошибка
     }
+
 
     public void insertNewUser() {
         try (Connection connection = dataSource.getConnection()) {
