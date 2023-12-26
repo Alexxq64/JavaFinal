@@ -1,8 +1,9 @@
-package ru.skillfactory.bank_app;
+package ru.skillfactory.bank_app.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.skillfactory.bank_app.repository.DatabaseManager;
 
 @RestController
 @RequestMapping("/{userId}")
