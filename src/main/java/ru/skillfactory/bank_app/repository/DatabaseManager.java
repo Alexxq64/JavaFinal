@@ -114,7 +114,50 @@ public class DatabaseManager {
         }
     }
 
+    public int transferMoney(int senderUserId, int receiverUserId, double amount) {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false); // начало транзакции
 
+            // Проверка баланса отправителя
+            double senderBalance = getBalance(senderUserId);
+            if (senderBalance < amount) {
+                connection.rollback(); // откат транзакции в случае неудачи
+                return -1; // Недостаточно средств
+            }
+
+            // Обновление баланса отправителя
+            try (PreparedStatement updateSenderBalanceStatement = connection.prepareStatement(
+                    "UPDATE users SET balance = balance - ? WHERE user_id = ?")) {
+                updateSenderBalanceStatement.setDouble(1, amount);
+                updateSenderBalanceStatement.setInt(2, senderUserId);
+                updateSenderBalanceStatement.executeUpdate();
+            }
+
+            // Обновление баланса получателя
+            try (PreparedStatement updateReceiverBalanceStatement = connection.prepareStatement(
+                    "UPDATE users SET balance = balance + ? WHERE user_id = ?")) {
+                updateReceiverBalanceStatement.setDouble(1, amount);
+                updateReceiverBalanceStatement.setInt(2, receiverUserId);
+                updateReceiverBalanceStatement.executeUpdate();
+            }
+
+            // Добавление записи в таблицу операций
+            try (PreparedStatement insertTransactionStatement = connection.prepareStatement(
+                    "INSERT INTO transactions (sender_id, receiver_id, operation_type, amount, execution_date) VALUES (?, ?, ?, ?, CURRENT_DATE)")) {
+                insertTransactionStatement.setInt(1, senderUserId);
+                insertTransactionStatement.setInt(2, receiverUserId);
+                insertTransactionStatement.setInt(3, 3); // Тип операции 3 - перевод
+                insertTransactionStatement.setDouble(4, amount);
+                insertTransactionStatement.executeUpdate();
+            }
+
+            connection.commit(); // завершение транзакции
+            return 1; // Успешно
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0; // Ошибка
+        }
+    }
 
     public List<String> getOperationList(int userId, Date startDate, Date endDate) {
         List<String> operations = new ArrayList<>();
@@ -182,7 +225,7 @@ public class DatabaseManager {
                 preparedStatement.executeUpdate();
             }
         } catch (SQLException e) {
-            e.printStackTrace(); // Лучше обработать исключение в реальном приложении
+            e.printStackTrace();
         }
     }
 
@@ -195,7 +238,7 @@ public class DatabaseManager {
                 preparedStatement.executeUpdate();
             }
         } catch (SQLException e) {
-            e.printStackTrace(); // Лучше обработать исключение в реальном приложении
+            e.printStackTrace();
         }
     }
 

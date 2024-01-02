@@ -47,4 +47,24 @@ public class AccountController {
             return ResponseEntity.badRequest().body("Error: Unable to deposit funds for user with ID " + userId);
         }
     }
+    @GetMapping("/transfer")
+    public ResponseEntity<Object> transferMoney(@PathVariable int userId, @RequestParam int recipientId, @RequestParam double amount) {
+        int transferResult = databaseManager.transferMoney(userId, recipientId, amount);
+
+        if (transferResult == 1) {
+            return ResponseEntity.ok("Transferred " + amount + " from User " + userId + " to User " + recipientId);
+        } else if (transferResult == 0) {
+            return ResponseEntity.badRequest().body("Error: Unable to transfer money. Please check the logs for details.");
+        } else if (transferResult == -1) {
+            return ResponseEntity.badRequest().body("Error: Insufficient funds for transfer.");
+        } else {
+            return ResponseEntity.badRequest().body("Error: Unknown error occurred during transfer.");
+        }
+    }
+
+    @GetMapping("/operations")
+    public ResponseEntity<Object> getAllOperations(@PathVariable int userId) {
+        return ResponseEntity.ok(databaseManager.getOperationList(userId, null, null));
+    }
+
 }
